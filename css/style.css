@@ -1534,6 +1534,42 @@ body {
   color: #fff;
 }
 
+/* ===== Admin Login Hint ===== */
+.admin-hint {
+  margin-top: 16px;
+  text-align: center;
+}
+
+.admin-hint details {
+  font-size: 0.78rem;
+  color: var(--text-light);
+}
+
+.admin-hint summary {
+  cursor: pointer;
+  padding: 4px;
+  font-size: 0.78rem;
+  color: var(--text-secondary);
+}
+
+.admin-hint-body {
+  margin-top: 8px;
+  padding: 10px;
+  background: var(--bg);
+  border-radius: var(--radius-sm);
+  font-size: 0.82rem;
+}
+
+.admin-hint-body code {
+  background: var(--gradient-soft);
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 0.85rem;
+  direction: ltr;
+  display: inline-block;
+  margin: 2px 0;
+}
+
 /* ===== Checkbox (Terms) ===== */
 .terms-check {
   display: flex;
