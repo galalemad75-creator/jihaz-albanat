@@ -77,12 +77,14 @@ const App = {
       this.render('shareView');
       return;
     }
-    // Always show auth if no user — no age gate blocking
+    // Always show auth if no user
     if (!DB.currentUser) {
+      this.viewHistory = []; // Clear history to prevent bypass
       this.render('auth');
       return;
     }
     document.getElementById('app-header').style.display = '';
+    this.viewHistory = [];
     this.render('home');
   },
 
@@ -115,6 +117,13 @@ const App = {
 
   // ===== Navigation =====
   navigateTo(view, pushHistory = true) {
+    // SECURITY: Block access to app pages if not logged in
+    const publicViews = ['auth', 'privacyPolicy', 'termsOfUse', 'aboutUs', 'shareView', 'forgotPassword'];
+    if (!DB.currentUser && !publicViews.includes(view)) {
+      this.render('auth');
+      return;
+    }
+
     if (pushHistory && this.currentView !== view) {
       this.viewHistory.push(this.currentView);
     }
@@ -130,7 +139,7 @@ const App = {
     const showBack = !navViews.includes(view) && view !== 'auth';
     document.getElementById('btn-back').classList.toggle('hidden', !showBack);
 
-    // Home button: show on ALL non-home pages when user exists
+    // Home button: show ONLY when logged in AND not on home
     const showHome = !!DB.currentUser && view !== 'home';
     document.getElementById('btn-home').classList.toggle('hidden', !showHome);
 
@@ -147,7 +156,12 @@ const App = {
       const prev = this.viewHistory.pop();
       this.navigateTo(prev, false);
     } else {
-      this.navigateTo('home', false);
+      // No history — go to auth if not logged in, home otherwise
+      if (DB.currentUser) {
+        this.navigateTo('home', false);
+      } else {
+        this.render('auth');
+      }
     }
   },
 
