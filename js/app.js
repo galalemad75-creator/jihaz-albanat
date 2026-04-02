@@ -76,17 +76,20 @@ const App = {
   checkAuth() {
     if (this.shareData) {
       document.getElementById('app-header').style.display = '';
+      this.currentView = 'shareView';
       this.render('shareView');
       return;
     }
     // Always show auth if no user
     if (!DB.currentUser) {
-      this.viewHistory = []; // Clear history to prevent bypass
+      this.viewHistory = [];
+      this.currentView = 'auth';
       this.render('auth');
       return;
     }
     document.getElementById('app-header').style.display = '';
     this.viewHistory = [];
+    this.currentView = 'home';
     this.render('home');
   },
 
@@ -175,6 +178,7 @@ const App = {
     // If not logged in, ALWAYS go back to auth — never into the app
     if (!DB.currentUser) {
       this.viewHistory = [];
+      this.currentView = 'auth';
       this.render('auth');
       return;
     }
@@ -248,6 +252,7 @@ const App = {
 
   // ===== Auth View =====
   renderAuth() {
+    this.currentView = 'auth';
     document.getElementById('app-header').style.display = 'none';
     document.getElementById('bottom-nav').style.display = 'none';
     const T = this.L, ar = this.ar;
@@ -835,6 +840,7 @@ const App = {
     document.getElementById('app-header').style.display = 'none';
     document.getElementById('bottom-nav').style.display = 'none';
     this.viewHistory = [];
+    this.currentView = 'auth';
     this.render('auth');
     this.showToast(this.L('logoutSuccess'));
   },
