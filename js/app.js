@@ -103,6 +103,7 @@ const App = {
     document.getElementById('btn-notifications').addEventListener('click', () => this.navigateTo('notifications'));
     document.getElementById('btn-back').addEventListener('click', () => this.goBack());
     document.getElementById('btn-home').addEventListener('click', () => this.navigateTo('home'));
+    document.getElementById('btn-logout-header')?.addEventListener('click', () => this.handleLogout());
 
     document.getElementById('modal-overlay').addEventListener('click', (e) => {
       if (e.target.id === 'modal-overlay') this.closeModal();
@@ -121,6 +122,12 @@ const App = {
     const publicViews = ['auth', 'privacyPolicy', 'termsOfUse', 'aboutUs', 'shareView', 'forgotPassword'];
     if (!DB.currentUser && !publicViews.includes(view)) {
       this.render('auth');
+      return;
+    }
+
+    // SECURITY: Wishlist is only for bride/giver roles
+    if (view === 'wishlist' && DB.currentUser && !['bride', 'giver'].includes(DB.currentUser.role)) {
+      this.navigateTo('home');
       return;
     }
 
@@ -143,16 +150,27 @@ const App = {
     const showHome = !!DB.currentUser && view !== 'home';
     document.getElementById('btn-home').classList.toggle('hidden', !showHome);
 
+    // Logout button: show when logged in, hide on auth
+    const showLogout = !!DB.currentUser && view !== 'auth';
+    document.getElementById('btn-logout-header')?.classList.toggle('hidden', !showLogout);
+
     // Bottom nav
     const showNav = !!DB.currentUser && navViews.includes(view);
     document.getElementById('bottom-nav').style.display = showNav ? 'flex' : 'none';
+
+    // Hide wishlist tab for admin/donor — only bride and giver need it
+    const role = DB.currentUser?.role;
+    const wishlistBtn = document.getElementById('nav-wishlist');
+    if (wishlistBtn) {
+      wishlistBtn.classList.toggle('nav-hidden', role === 'admin' || role === 'donor');
+    }
 
     // Header
     document.getElementById('app-header').style.display = view === 'auth' ? 'none' : '';
   },
 
   goBack() {
-    // If not logged in, always go back to auth (never into the app)
+    // If not logged in, ALWAYS go back to auth — never into the app
     if (!DB.currentUser) {
       this.viewHistory = [];
       this.render('auth');
@@ -160,11 +178,6 @@ const App = {
     }
     if (this.viewHistory.length > 0) {
       const prev = this.viewHistory.pop();
-      // Safety: if prev is somehow a non-public view and user not logged in, go to auth
-      if (!DB.currentUser && !['auth','privacyPolicy','termsOfUse','aboutUs'].includes(prev)) {
-        this.render('auth');
-        return;
-      }
       this.navigateTo(prev, false);
     } else {
       this.navigateTo('home', false);
@@ -435,10 +448,14 @@ const App = {
     });
 
     document.querySelectorAll('.cat-pill').forEach(pill => {
-      pill.addEventListener('click', () => {
+      const clone = pill.cloneNode(true);
+      pill.parentNode.replaceChild(clone, pill);
+      clone.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
         document.querySelectorAll('.cat-pill').forEach(p => p.classList.remove('active'));
-        pill.classList.add('active');
-        this.filterProducts(pill.dataset.category);
+        clone.classList.add('active');
+        this.filterProducts(clone.dataset.category);
       });
     });
 
@@ -684,7 +701,7 @@ const App = {
           <div class="profile-stats"><div class="profile-stat"><div class="profile-stat-num">${DB.cart.length}</div><div class="profile-stat-label">${ar ? 'في السلة' : 'In Cart'}</div></div><div class="profile-stat"><div class="profile-stat-num">${DB.orders.filter(o => o.buyerId === user.id).length}</div><div class="profile-stat-label">${ar ? 'طلبات' : 'Orders'}</div></div></div></div>
         <div class="menu-list">
           ${user.role === 'admin' ? `<div class="menu-item" onclick="App.navigateTo('admin')"><div class="menu-icon">⚙️</div><div class="menu-text">${T('adminPanel')}</div><div class="menu-arrow">‹</div></div><div class="menu-item" onclick="App.navigateTo('addProduct')"><div class="menu-icon">➕</div><div class="menu-text">${T('addProduct')}</div><div class="menu-arrow">‹</div></div><div class="menu-item" onclick="App.navigateTo('adminOrders')"><div class="menu-icon">📋</div><div class="menu-text">${T('allOrders')}</div><div class="menu-arrow">‹</div></div>` : ''}
-          <div class="menu-item" onclick="App.navigateTo('wishlist')"><div class="menu-icon">💝</div><div class="menu-text">${T('myWishlistBtn')}</div><div class="menu-arrow">‹</div></div>
+          ${['bride', 'giver'].includes(user.role) ? `<div class="menu-item" onclick="App.navigateTo('wishlist')"><div class="menu-icon">💝</div><div class="menu-text">${T('myWishlistBtn')}</div><div class="menu-arrow">‹</div></div>` : ''}
           <div class="menu-item" onclick="App.navigateTo('cart')"><div class="menu-icon">🛒</div><div class="menu-text">${T('myCart')}</div><div class="menu-arrow">‹</div></div>
           <div class="menu-item" onclick="App.navigateTo('notifications')"><div class="menu-icon">🔔</div><div class="menu-text">${ar ? 'الإشعارات' : 'Notifications'}</div><div class="menu-arrow">‹</div></div>
           <div class="menu-item" onclick="App.toggleDarkMode()"><div class="menu-icon">${document.body.classList.contains('dark-mode') ? '☀️' : '🌙'}</div><div class="menu-text">${document.body.classList.contains('dark-mode') ? T('lightMode') : T('darkMode')}</div><div class="menu-arrow">‹</div></div>
@@ -802,7 +819,7 @@ const App = {
       const T = App.L, ar = App.ar;
       const pct = Math.round((list.funded / list.total) * 100);
       const items = list.items.map(id => DB.products.find(p => p.id === id)).filter(Boolean);
-      return `<div class="donor-card"><div class="donor-card-header"><div class="donor-avatar">👧</div><div><div class="donor-name">${list.girlName}</div><div class="donor-status">${list.age} ${T('yearsOld')} • ${list.donors} ${T('donors_count')}</div></div></div><p style="font-size:0.85rem;color:var(--text-secondary);margin-bottom:8px">${list.story}</p><div class="progress-bar"><div class="progress-fill" style="width:${pct}%"></div></div><div class="progress-text"><span>${list.funded.toLocaleString()} / ${list.total.toLocaleString()} ${T('currency')}</span><span>${pct}%</span></div><div style="margin-top:12px"><p style="font-size:0.8rem;color:var(--text-secondary);margin-bottom:8px">${T('requiredProducts')}</p>${items.map(item => `<div style="display:flex;align-items:center;gap:8px;padding:6px 0;font-size:0.85rem"><span>${item.emoji}</span><span style="flex:1">${item.name}</span><span style="color:var(--primary-dark);font-weight:700">${item.price.toLocaleString()} ${T('currency')}</span></div>`).join('')}</div><button class="btn btn-gold btn-block mt-16" data-donate-list="${list.id}">${T('donateNow')}</button></div>`;
+      return `<div class="donor-card"><div class="donor-card-header"><div class="donor-avatar">👧</div><div><div class="donor-name">${list.girlName}</div><div class="donor-status">${list.age} ${T('yearsOld')} • ${list.donors} ${T('donors_count')}</div></div></div><p style="font-size:0.85rem;color:var(--text-secondary);margin-bottom:8px">${list.story}</p><div class="progress-bar"><div class="progress-fill" style="width:${pct}%"></div></div><div class="progress-text"><span>${list.funded.toLocaleString()} / ${list.total.toLocaleString()} ${T('currency')}</span><span>${pct}%</span></div><div style="margin-top:12px"><p style="font-size:0.8rem;color:var(--text-secondary);margin-bottom:8px">${T('requiredProducts')}</p>${items.map(item => `<div style="display:flex;align-items:center;gap:8px;padding:6px 0;font-size:0.85rem"><span>${item.emoji}</span><a href="${item.affiliateUrl}" target="_blank" style="flex:1;color:var(--primary);text-decoration:underline">${item.name}</a><span style="color:var(--primary-dark);font-weight:700">${item.price.toLocaleString()} ${T('currency')}</span></div>`).join('')}</div><button class="btn btn-gold btn-block mt-16" data-donate-list="${list.id}">${ar ? 'تأكيد التبرع بعد الشراء 🤲' : 'Confirm Donation 🤲'}</button></div>`;
     },
   },
 
@@ -833,7 +850,12 @@ const App = {
   },
 
   handleShareLink() {
-    const items = DB.cart.length > 0 ? DB.cart : DB.getMyWishlist();
+    // Use cart items (primary) or wishlist (fallback)
+    let items = DB.cart.length > 0 ? [...DB.cart] : DB.getMyWishlist();
+    // If wishlist was empty but cart has items, save cart to wishlist for persistence
+    if (DB.cart.length > 0 && DB.getMyWishlist().length === 0) {
+      DB.saveWishlist(DB.cart);
+    }
     if (items.length === 0) return this.showToast(this.L('addProductsFirst'));
     const link = DB.generateShareLink(items, DB.currentUser?.name || (this.ar ? 'عروسة' : 'Bride'), this.selectedAvatar);
     const urlInput = document.getElementById('share-url');
@@ -862,7 +884,13 @@ const App = {
     if (!list) return;
     const T = this.L, ar = this.ar;
     const remaining = list.total - list.funded;
-    this.openModal(`<div class="modal-handle"></div><h3 class="modal-title">${T('donateFor')} ${list.girlName} 🤲</h3><p style="text-align:center;color:var(--text-secondary);margin-bottom:20px">${T('remaining')}: ${remaining.toLocaleString()} ${T('currency')}</p><div class="form-group"><label class="form-label">${T('amount')}</label><input type="number" class="form-input" id="donation-amount" placeholder="0" value="${remaining}"></div><div class="form-group"><label class="form-label">${T('donorName')}</label><input type="text" class="form-input" id="donor-name" placeholder="${T('donorNamePlaceholder')}"></div><div class="payment-options" style="padding:0"><div class="payment-option" data-payment="instapay" onclick="document.querySelectorAll('.payment-option').forEach(x=>x.classList.remove('selected'));this.classList.add('selected')"><div class="payment-icon">📸</div><div class="payment-info"><div class="payment-name">${T('instapay')}</div></div><div class="payment-radio"></div></div><div class="payment-option" data-payment="vodafone" onclick="document.querySelectorAll('.payment-option').forEach(x=>x.classList.remove('selected'));this.classList.add('selected')"><div class="payment-icon">📱</div><div class="payment-info"><div class="payment-name">${T('vodafoneCash')}</div></div><div class="payment-radio"></div></div><div class="payment-option" data-payment="paypal" onclick="document.querySelectorAll('.payment-option').forEach(x=>x.classList.remove('selected'));this.classList.add('selected')"><div class="payment-icon">💳</div><div class="payment-info"><div class="payment-name">${T('paypal')}</div></div><div class="payment-radio"></div></div></div><button class="btn btn-gold btn-block mt-24" onclick="App.processDonation(${listId})">${T('confirmDonation')}</button>`);
+    const items = list.items.map(id => DB.products.find(p => p.id === id)).filter(Boolean);
+    this.openModal(`<div class="modal-handle"></div><h3 class="modal-title">${T('donateFor')} ${list.girlName} 🤲</h3><p style="text-align:center;color:var(--text-secondary);margin-bottom:12px">${ar ? 'اشترِ المنتجات من الروابط الخارجية ثم أكد التبرع هنا' : 'Buy products from external links then confirm your donation here'}</p><p style="text-align:center;color:var(--text-secondary);margin-bottom:20px;font-weight:700">${T('remaining')}: ${remaining.toLocaleString()} ${T('currency')}</p><div style="margin-bottom:16px"><p style="font-size:0.85rem;font-weight:700;margin-bottom:8px">${ar ? '🔗 اشترِ من هنا:' : '🔗 Buy from:'}</p>${items.map(item => `<a href="${item.affiliateUrl}" target="_blank" style="display:flex;align-items:center;gap:8px;padding:8px;background:var(--bg);border-radius:8px;margin-bottom:6px;text-decoration:none;color:var(--text)"><span>${item.emoji}</span><span style="flex:1;font-size:0.85rem;color:var(--primary);text-decoration:underline">${item.name}</span><span style="font-size:0.8rem;font-weight:700;color:var(--primary-dark)">${item.price.toLocaleString()} ${T('currency')}</span><span style="font-size:0.75rem">↗️</span></a>`).join('')}</div><hr style="border:none;border-top:1px solid var(--border);margin:16px 0"><p style="font-size:0.85rem;font-weight:700;margin-bottom:12px">${ar ? '📸 بعد الشراء، أكد التبرع:' : '📸 After buying, confirm:'}</p><div class="form-group"><label class="form-label">${T('amount')}</label><input type="number" class="form-input" id="donation-amount" placeholder="0" value="${remaining}"></div><div class="form-group"><label class="form-label">${T('donorName')}</label><input type="text" class="form-input" id="donor-name" placeholder="${T('donorNamePlaceholder')}"></div><div class="form-group"><label class="form-label">${ar ? 'سكرين شوت الفاتورة' : 'Receipt Screenshot'}</label><div class="upload-zone" id="donor-upload-zone" onclick="document.getElementById('donor-screenshot-input').click()"><div class="upload-icon">📷</div><div class="upload-text">${T('tapToUpload')}</div><input type="file" id="donor-screenshot-input" accept="image/*" style="display:none"></div><img id="donor-screenshot-preview" class="upload-preview hidden"></div><button class="btn btn-gold btn-block mt-24" onclick="App.processDonation(${listId})">${T('confirmDonation')}</button>`);
+    // Bind upload handler
+    document.getElementById('donor-screenshot-input')?.addEventListener('change', (e) => {
+      const file = e.target.files[0];
+      if (file) { const r = new FileReader(); r.onload = (ev) => { const p = document.getElementById('donor-screenshot-preview'); p.src = ev.target.result; p.classList.remove('hidden'); }; r.readAsDataURL(file); }
+    });
   },
 
   processDonation(listId) {
@@ -892,7 +920,12 @@ const App = {
     if (!grid) return;
     const filtered = category === 'all' ? DB.products : DB.products.filter(p => p.category === category);
     const isScroll = grid.id === 'featured-scroll';
-    grid.innerHTML = isScroll ? filtered.map(p => App.components.productCard(p)).join('') : filtered.map(p => App.components.productCardSmall(p)).join('');
+    if (filtered.length === 0) {
+      const ar = this.ar;
+      grid.innerHTML = `<div class="empty-state" style="grid-column:1/-1"><div class="empty-icon">🔍</div><p class="empty-text">${ar ? 'لا توجد منتجات في هذا التصنيف' : 'No products in this category'}</p></div>`;
+    } else {
+      grid.innerHTML = isScroll ? filtered.map(p => App.components.productCard(p)).join('') : filtered.map(p => App.components.productCardSmall(p)).join('');
+    }
     this.bindDynamicEvents('products');
   },
 };

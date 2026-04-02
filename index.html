@@ -41,6 +41,9 @@
       <div class="header-actions">
         <button id="btn-lang-toggle" class="lang-toggle-btn" aria-label="تبديل اللغة" title="English / عربي">🌐</button>
         <button id="btn-dark-toggle" class="dark-toggle" aria-label="تبديل الوضع الليلي">🌙</button>
+        <button id="btn-logout-header" class="header-btn hidden" aria-label="تسجيل الخروج" title="تسجيل الخروج">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+        </button>
         <button id="btn-cart" class="header-btn cart-btn" aria-label="عربة التسوق">
           <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg>
           <span id="cart-badge" class="cart-badge hidden">0</span>
@@ -63,7 +66,7 @@
         <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
         <span>الرئيسية</span>
       </button>
-      <button class="nav-item" data-view="wishlist">
+      <button class="nav-item" data-view="wishlist" id="nav-wishlist">
         <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
         <span>أمنياتي</span>
       </button>

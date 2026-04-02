@@ -483,6 +483,9 @@ body {
   cursor: pointer;
   transition: all 0.2s;
   white-space: nowrap;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+  user-select: none;
 }
 
 .cat-pill.active {
@@ -1484,6 +1487,11 @@ body {
 /* ===== Home Button ===== */
 .home-btn { }
 .home-btn.hidden { display: none; }
+
+/* ===== Nav Wishlist - hide for non-bride/giver ===== */
+#nav-wishlist.nav-hidden {
+  display: none;
+}
 
 /* ===== Auth Footer Links ===== */
 .auth-footer-links {
