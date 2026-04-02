@@ -152,16 +152,22 @@ const App = {
   },
 
   goBack() {
+    // If not logged in, always go back to auth (never into the app)
+    if (!DB.currentUser) {
+      this.viewHistory = [];
+      this.render('auth');
+      return;
+    }
     if (this.viewHistory.length > 0) {
       const prev = this.viewHistory.pop();
+      // Safety: if prev is somehow a non-public view and user not logged in, go to auth
+      if (!DB.currentUser && !['auth','privacyPolicy','termsOfUse','aboutUs'].includes(prev)) {
+        this.render('auth');
+        return;
+      }
       this.navigateTo(prev, false);
     } else {
-      // No history — go to auth if not logged in, home otherwise
-      if (DB.currentUser) {
-        this.navigateTo('home', false);
-      } else {
-        this.render('auth');
-      }
+      this.navigateTo('home', false);
     }
   },
 
@@ -255,15 +261,6 @@ const App = {
               <button onclick="App.renderForgotPassword()">${T('forgotPassword')}</button>
             </div>
             <button class="btn btn-primary btn-block mt-16" id="btn-login">${T('loginBtn')}</button>
-            <div class="admin-hint">
-              <details>
-                <summary>${ar ? '🔑 بيانات الأدمن' : '🔑 Admin Login'}</summary>
-                <div class="admin-hint-body">
-                  <code>admin@jihaz.app</code><br>
-                  <code>admin123</code>
-                </div>
-              </details>
-            </div>
           </div>
           <div id="auth-register" class="hidden">
             <div class="form-group">
