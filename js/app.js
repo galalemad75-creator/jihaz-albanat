@@ -45,6 +45,8 @@ const App = {
     localStorage.setItem('jb_dark_mode', isDark);
     const btn = document.getElementById('btn-dark-toggle');
     if (btn) btn.textContent = isDark ? '☀️' : '🌙';
+    // Update auth screen toggle if visible
+    if (this.currentView === 'auth') this.renderAuth();
   },
 
   // ===== Language Toggle =====
@@ -253,6 +255,10 @@ const App = {
 
     main.innerHTML = `
       <div class="auth-screen">
+        <div class="auth-top-bar">
+          <button class="auth-toggle-btn" onclick="App.toggleLanguage()" title="English / عربي">🌐</button>
+          <button class="auth-toggle-btn" onclick="App.toggleDarkMode()" title="${document.body.classList.contains('dark-mode') ? (ar ? 'الوضع النهاري' : 'Light Mode') : (ar ? 'الوضع الليلي' : 'Dark Mode')}">${document.body.classList.contains('dark-mode') ? '☀️' : '🌙'}</button>
+        </div>
         <div class="auth-logo">💍</div>
         <h1 class="auth-title">${ar ? 'جهاز البنات' : 'Jihaz Al-Banat'}</h1>
         <p class="auth-subtitle">${ar ? 'منصة ذكية لهدايا الزواج' : 'Smart platform for wedding gifts'}</p>

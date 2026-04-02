@@ -1042,6 +1042,36 @@ body {
   background: var(--gradient-soft);
 }
 
+.auth-top-bar {
+  position: absolute;
+  top: 16px;
+  left: 16px;
+  right: 16px;
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  z-index: 10;
+}
+
+.auth-toggle-btn {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  border: 2px solid var(--border);
+  background: var(--bg-card);
+  font-size: 1.3rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+  box-shadow: var(--shadow);
+}
+
+.auth-toggle-btn:active {
+  transform: scale(0.9);
+}
+
 .auth-logo {
   font-size: 64px;
   margin-bottom: 16px;
